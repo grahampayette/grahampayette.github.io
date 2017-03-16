@@ -1,0 +1,18 @@
+---
+title: "Week2"
+author: "Graham Payette"
+date: "March 15, 2017"
+output: html_document
+---
+
+
+
+## Week2 Assignment March 15, 2017
+
+```{r setup, echo = F}
+library(leaflet, warn.conflicts = FALSE, quietly = TRUE, verbose = FALSE)
+
+df <- read.csv(file = "https://grahampayette.github.io/gplocanct.csv", header = TRUE, sep = ",")
+my_map <- df %>% leaflet() %>% addTiles() %>% addMarkers(lat = df$LAT, lng = df$LONG, popup = ~as.character(df$GP_Count), label = ~as.character(df$PMF_PLACE), clusterOptions = markerClusterOptions()) %>% addLegend(labels = "", title = "Vancouver Island Physicians", colors= "Black")
+my_map
+```
