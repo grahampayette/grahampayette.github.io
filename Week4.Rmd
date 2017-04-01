@@ -1,0 +1,68 @@
+---
+title: "Week4"
+author: "Graham Payette"
+date: "March 30, 2017"
+output: html_document
+---
+
+
+
+## Week4 Project Assignment March 30, 2017
+
+#Executive summary
+For this assignment I performed an exploratory data analysis on the mtcars data set and then looked to find a regression model that best explained the relationship between miles per gallon and type of transmission. (manual versus automatic) 
+
+##The two questions we were asked to answer were:
+
+#.	Is an automatic or manual transmission better for MPG?
+#. 	Quantify the MPG difference between automatic and manual transmissions?
+
+##Based on the analysis the answers are:
+#.	In the mtcars data set a manual transmission is better for MPG than an automatic transmissions.
+#.	The cars with manual transmission have a MPG 7.24 higher than the cars with automatic transmission if you just look at the am and mpg data.  Model analysis points to a significant relationship between weight and miles per gallon that flattens this advantage to approximately .0236
+
+##What?
+Like most things...the answer isn't that black and white.  Although it is clear that within the mtcars data set manual transmissions show better gas mileage than automatics it is also clear that there are several additional factors that contribute to this with the most significant being weight. Manual transmission cars are generally lighter than equivalent automatic cars.  There are several factors (displacement of the engine, number of cylinders in addition to manual/automatic that influence the weight).  The above answers still hold true but need to be caveated with the additional information that transmission type is not a universal predictor of MPG.  
+
+Through the analysis I tried to find a model that most honestly described the relationship between the overall mtcars data set and fuel economy.  With the model I landed on the coefficient for the transmission variable has an estimated value of -0.0236, meaning that a car with manual transmission should have 0.0236 better per gallon fuel economy than a similar car with automatic transmission. The 95% confidence interval for this coefficient exceeds this value (-3.1848, 3.1376) which means we need more data and analysis to reliably predict MPG base on transmission type.
+
+##Approach
+The following details the exploratory analysis, modeling and associated interpretations.  
+
+```{r setup, echo = T}
+head(mtcars)
+#Take a look at the mtcars data set
+
+with(mtcars, {
+    plot(as.factor(am), mpg, main="MPG by transmissions", xlab="am", ylab="mpg")
+})
+
+#The plot shows that the mpg for cars with manual transmissions is better compared with cars with automatic transmissions.
+
+require(graphics)
+pairs(mtcars,
+      main = "Correlation between variables",
+      panel=panel.smooth)
+# Explore the correlation between all of the variables in the mtcars data set.  Note the strong correlation between Wt and MPG
+
+# Generate the basic model and take a look at it
+fitam <- lm(mpg ~ am, mtcars)
+summary(fitam)$coef
+
+
+# Generate the model with all fields and take a look at it
+fitall <- lm(mpg ~ ., mtcars)
+summary(fitall)$coef
+
+#Note the significance of WT compared to the other fields. Based on this I am going to generate a third model containing just AM and WT
+
+fitwt <- lm(mpg ~ am + wt, mtcars)
+summary(fitwt)$coef
+
+
+#Comparing our three models
+anova(fitam, fitall, fitwt)
+
+#Based on this fitwt looks like the best predictor.  The relation between auto/manual though is within the error range therefore we can't say AM is a predictor of fuel economy. 
+
+```
