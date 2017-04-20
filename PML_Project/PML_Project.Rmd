@@ -1,0 +1,128 @@
+---
+title: "PML_Project"
+author: "Graham Payette"
+date: "April 13, 2017"
+output: html_document
+---
+
+```{r setup, cache = F, echo = F, message = F, warning = F, tidy = F}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# PML Project April 2017
+This is the final project for the practical machine learning class, part of the
+data science specialization being run by the JHSPH.  
+
+# Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+# Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+#Reference
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+# Getting the Data
+```{r cache=TRUE,message = F, warning = F}
+
+trainUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+
+testUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+
+traindata <- read.csv(url(trainUrl), na.strings=c("NA","#DIV/0!",""))
+
+testdata <- read.csv(url(testUrl), na.strings=c("NA","#DIV/0!",""))
+
+```
+
+# Setting the environment
+
+```{r loadPackage,cache=TRUE,message = F, warning = F}
+library(caret)
+library(randomForest)
+
+```
+
+# Splitting data for modeling
+```{r,dependson="loadPackage",cache=TRUE,message = F, warning = F}
+intrain <- createDataPartition(y=traindata$classe,
+                              p=0.60, list=FALSE)
+mtrain <- traindata[intrain, ]
+mtest <- traindata[-intrain, ]
+```
+
+#Training data set operations
+
+```{r,dependson="loadPackage",cache=TRUE,message = F, warning = F}
+
+#Removing fields unhelpful to prediction algorithm
+x_fl <- grep("name|timestamp|window|X", colnames(mtrain), value=F) 
+mtrain <- mtrain[,-x_fl]
+
+# Removing near zero variables 
+nzv_cols <- nearZeroVar(mtrain)
+if(length(nzv_cols) > 0) mtrain <- mtrain[, -nzv_cols]
+
+# This left 125 variables so removing variables where there is little data
+mtrain[mtrain ==""] <- NA
+NArate <- apply(mtrain, 2, function(x) sum(is.na(x)))/nrow(mtrain)
+mtrain <- mtrain[!(NArate>0.95)]
+
+# Still 53 variables so additional pre-processing advised
+
+preProc <- preProcess(mtrain[,1:53],method="pca",pcaComp=25)
+mtrainPC <- predict(preProc,mtrain[,1:53])
+```
+
+
+# Random Forest Modeling
+```{r,dependson="loadPackage",cache=TRUE,message = F, warning = F}
+modfitRF <- randomForest(mtrain$classe ~ .,   data=mtrainPC, do.trace=F)
+print(modfitRF)
+```
+
+#Testing dataset operations
+```{r,dependson="loadPackage",cache=TRUE,message = F, warning = F}
+mtest <- mtest[,-x_fl]
+
+# Removing near zero variables 
+nzv_cols <- nearZeroVar(mtest)
+if(length(nzv_cols) > 0) mtest <- mtest[, -nzv_cols]
+
+mtest[mtest ==""] <- NA
+NArate <- apply(mtest, 2, function(x) sum(is.na(x)))/nrow(mtest)
+mtest <- mtest[!(NArate>0.95)]
+
+mtestPC <- predict(preProc,mtest[,1:53])
+
+confusionMatrix(mtest$classe,predict(modfitRF,mtestPC))
+```
+# Discussion
+We started with 19622 observations containing 160 variables.  The data is the output of various measurements taken while people are exercising.  There is a "right" way to do each excercise they were doing and a classification scheme for the five incorrect ways. The object of the assignment was to use a ML technique such as randomforest to generate a model that can predict the classe a particular exerciser would fall in to based on a sample of their sensor data.
+What was found was that very few of the 160 original variables were required. Through a combination of data exploration and cleanup two thirds of the variables were excluded due to a lack of values and/or little to no contribution to the overall understanding.  PCA was used to further refine the pertinent data set and then the randomforest technique was applied.  
+
+Cross validation indicated indicates an ~97% accuracy rate. Sensitivity of between .94->.99 and a Specificity of .99 so the model seems to work well under these specific testing conditions. 
+
+
+# Project testing dataset
+```{r,dependson="loadPackage",cache=TRUE,message = F, warning = F}
+mproj <- testdata[,-x_fl]
+mproj[mproj==""] <- NA
+NArate <- apply(mproj, 2, function(x) sum(is.na(x)))/nrow(mproj)
+mproj <- mproj[!(NArate>0.95)]
+mprojPC <- predict(preProc,mproj[,1:53])
+mproj$classe <- predict(modfitRF,mprojPC)
+```
+
