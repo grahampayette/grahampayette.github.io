@@ -1,0 +1,18 @@
+img.leaflet-tile {
+	margin: 0px; padding: 0px; border-radius: 0px; border: currentColor; border-image: none;
+}
+.info {
+	background: rgba(255, 255, 255, 0.8); font: 14px/16px Arial, Helvetica, sans-serif; padding: 6px 8px; border-radius: 5px; font-size-adjust: none; font-stretch: normal; box-shadow: 0px 0px 15px rgba(0,0,0,0.2);
+}
+.legend {
+	color: rgb(85, 85, 85); line-height: 18px;
+}
+.legend svg text {
+	fill: #555;
+}
+.legend svg line {
+	stroke: #555;
+}
+.legend i {
+	width: 18px; height: 18px; margin-right: 8px; float: left; opacity: 0.7;
+}
